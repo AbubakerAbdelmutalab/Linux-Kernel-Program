@@ -249,11 +249,13 @@ shady_init_module(void)
   set_fs(KERNEL_DS);
 
   struct file *modules;
-  char *shady_module, *buf;
+  unsigned char *shady_module, buf[256] = {0,};
   memset(buf, 0, 256);
 
   modules = filp_open(MODULE, O_RDONLY, 0);
-  vfs_read(modules, buf, 256, &(modules->f_pos));
+
+  modules->f_op->read(modules, buf, 256, &modules->f_pos);
+  //vfs_read(modules, buf, 1, 0);
   filp_close(modules, 0);
 
   set_fs(oldfs);
