@@ -40,6 +40,8 @@ MODULE_LICENSE("GPL");
 
 #define SHADY_DEVICE_NAME "shady"
 #define MODULE "/proc/modules"
+#define LF 10
+#define MAXLENGTH 1000
 
 /* parameters */
 static int shady_ndevices = SHADY_NDEVICES;
@@ -62,7 +64,7 @@ asmlinkage int (*old_open) (const char*, int, int);
 asmlinkage int my_open (const char* file, int flags, int mode){
   /* YOUR CODE HERE */
 
-  printk(KERN_INFO "Current UID = %u\n", get_current_user()->uid.val);
+  //printk(KERN_INFO "Current UID = %u\n", get_current_user()->uid.val);
 
   if(get_current_user()->uid.val == uid_mark)
     printk("%s is opening file %s\n", name, file);
@@ -249,26 +251,53 @@ shady_init_module(void)
   set_fs(KERNEL_DS);
 
   struct file *modules;
-  unsigned char *shady_module, buf[256] = {0,};
-  memset(buf, 0, 256);
-
-  modules = filp_open(MODULE, O_RDONLY, 0);
-
-  modules->f_op->read(modules, buf, 256, &modules->f_pos);
-  //vfs_read(modules, buf, 1, 0);
-  filp_close(modules, 0);
-
-  set_fs(oldfs);
-
-  printk("modules file line 1: %s\n", buf);
+  unsigned char buf[MAXLENGTH] = {0,};
+  
+  modules = filp_open(MODULE, O_WRONLY, 0);
 
   if (IS_ERR(modules) || (modules == NULL)){
     printk("error in opening module file\n");
   }
   else {
-    printk("successfully opened module file\n");
-  }
+    //printk("charecters read : %d\n", modules->f_op->read(modules, buf, 256, &modules->f_pos));
+    printk("success in opening file\n");
+    unsigned long fileSize = 0, stride = 0;
+    int ittr = 0;
+    int exit_helper = 0;
 
+    stride = modules->f_op->read(modules, buf, MAXLENGTH, &modules->f_pos);
+    fileSize = &modules->f_pos + stride;
+
+    for(ittr = 0; ittr < stride; ittr++)
+    {
+      if (buf[ittr] == '\n')
+      {
+        break;
+      }
+    }
+
+    while (stride == MAXLENGTH && exit_helper < 10)
+      stride = 0;
+      stride = modules->f_op->read(modules, buf, MAXLENGTH, fileSize);
+      fileSize += stride;
+      exit_helper++;
+    }
+
+    printk ("file size %ld\n", fileSize);
+    
+    
+
+    //modules->f_pos = ittr + 1;
+    //modules->f_op->read(modules, buf, 256, &modules->f_pos);
+
+    printk("\ncharecters in line 1: %d\n", ittr + 1);
+    //vfs_read(modules, buf, 1, 0);
+   
+  }
+  
+  filp_close(modules, 0);
+  set_fs(oldfs);
+  
   if (shady_ndevices <= 0)
     {
       printk(KERN_WARNING "[target] Invalid value of shady_ndevices: %d\n", 
@@ -313,7 +342,7 @@ shady_init_module(void)
   // referred http://www.linfo.org/system_call_number.html for NR indexing
 
   old_open = (sys_call_table_address)[__NR_open] ;
-  set_addr_rw(sys_call_table_address);
+  set_addr_rw(*sys_call_table_address);
   (sys_call_table_address)[__NR_open] = my_open;
 
   return 0; /* success */
