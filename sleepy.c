@@ -125,9 +125,12 @@ sleepy_write(struct file *filp, const char __user *buf, size_t count,
   if(count != 4)
     return -EINVAL;
 
-  int *seconds = buf;
-
-  unsigned long timer = msecs_to_jiffies(*seconds * 1000); // val * HZ / 1000; but this handles corner cases
+  // int *seconds = buf;
+  // or
+  int sec = 0;
+  int char_read = copy_from_user(&sec, buf, count);
+  
+  unsigned long timer = msecs_to_jiffies(sec * 1000); // val * HZ / 1000; but this handles corner cases
   
   /* END YOUR CODE */
 	

